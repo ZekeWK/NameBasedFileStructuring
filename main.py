@@ -35,7 +35,7 @@ def move():
             continue
 
         shutil.move(cur_path, new_path, copy_function = shutil.copy2)
-        log.write(str(datetime.now()) + "| Moved file: " + file + " from:" + cur_path + " to: " + cur_path + "\n")
+        log.write(str(datetime.now()) + "| Moved file: " + file + " from:" + cur_path + " to: " + new_path + "\n")
     
     log.write(str(datetime.now()) + "| Done in folder: " + config.folder_to_structure + "with the files: " + str(files_to_sort) + "\n")
     print("Done")
