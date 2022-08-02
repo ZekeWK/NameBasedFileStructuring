@@ -21,7 +21,7 @@ def move():
         cur_path = config.folder_to_structure + "\\" + file
     
         new_dir = None
-        for pattern, path in config.patterns:
+        for (pattern, path) in config.patterns:
             if re.search(pattern, file) != None:
                 new_dir = (path)
                 break
