@@ -1,56 +1,70 @@
 #NameBasedFileStructuring by ZekeWK, use as you wish!
 
-import os
+from os import path, listdir, remove, chdir
+from os.path import isdir, exists
 import shutil
-import re
-from datetime import datetime
+from re import search
+from sys import stdout
+import logging
 
-import config
 
-def move():
-    print("Move started")
-    log = open('log.txt', 'a')
+# TODO write comment Modifies list...
+def structure_dir(unstructured_dir, dir_patterns):
+    chdir(unstructured_dir)
+    unstructured_files = listdir()
 
-    errors = False
+    logging.info(f"Activated in directory {unstructured_dir} containing the files {', '.join(unstructured_files)}.")
 
-    files_to_sort = os.listdir(config.folder_to_structure)
+    for file in unstructured_files:
+        new_dirs = []
+        error = False
+        for (pattern, new_dir) in dir_patterns:
+            if search(pattern, file) is None:
+                continue
 
-    log.write(str(datetime.now()) + "| Activated in folder: " + config.folder_to_structure + "with the files: " + str(files_to_sort) + "\n")
+            new_dirs.append(new_dir)
 
-    for file in files_to_sort:
-        cur_path = config.folder_to_structure + "\\" + file
-    
-        new_dir = None
-        for (pattern, path) in config.patterns:
-            if re.search(pattern, file) != None:
-                new_dir = (path)
-                break
-        
-        if new_dir == None:
-            log.write(str(datetime.now()) + "| Error for file: " + file + " . Could not find any pattern that matched the file \n")
-            errors = True
-            continue
-        
-        new_path = new_dir + "\\" + file
+            if not isdir(new_dir):
+                logging.warning(f"File {file} not moved as directory {new_dir} does not exist.")
+                error = True
+                continue
 
-        if not os.path.exists(new_dir):
-            log.write(str(datetime.now()) + "| Error for file: " + file + " . It's new directory: " + new_dir + " does not exist. \n")
-            errors = True
-            continue
+            new_path = path.join(new_dir, file)
 
-        if file in os.listdir(new_dir):
-            log.write(str(datetime.now()) + "| Error for file: " + file + " . File name already exists in new directory. \n")
-            errors = True
+            if exists(new_path):
+                logging.warning(f"File {file} not moved as directory {new_dir} already contains file with same name.")
+                error = True
+
+
+        if not new_dirs:
+            logging.warning(f"File {file} not moved as it did not match any pattern.")
             continue
 
-        shutil.move(cur_path, new_path, copy_function = shutil.copy2)
-        log.write(str(datetime.now()) + "| Moved file: " + file + " from:" + cur_path + " to: " + new_path + "\n")
+        if error:
+            continue
+
+        for new_dir in new_dirs:
+            shutil.copy(file, new_dir)
+            logging.info(f"File {file} copied to {new_dir}.")
+
+        remove(file)
+        logging.info(f"File removed from {unstructured_dir}.")
+
     
-    if errors:
-        print("Atleast one error occurred during this session, further details can be found in the log.")
-    
-    log.write(str(datetime.now()) + "| Done in folder: " + config.folder_to_structure + "with the files: " + str(files_to_sort) + "\n")
-    print("Done")
-        
+    logging.info(f"Done in directory {unstructured_dir} containing files {', '.join(listdir())}.")
+
 if __name__ == "__main__":
-    move()
+    print("Started")
+
+    fh = logging.FileHandler("log.txt")
+    fh.setLevel(logging.INFO)
+
+    sh = logging.StreamHandler(stdout)
+    sh.setLevel(logging.WARNING)
+
+    logging.basicConfig(format="%(asctime)s | %(levelname)s | %(message)s", handlers=[sh, fh], level=logging.INFO)
+
+    import config
+
+    structure_dir(config.unstructured_dir, config.dir_patterns)
+    print("Done")
